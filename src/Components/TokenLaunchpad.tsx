@@ -8,14 +8,13 @@ import {
 import {
   createInitializeMintInstruction,
   TOKEN_2022_PROGRAM_ID,
-  getMinimumBalanceForRentExemptMint,
   createInitializeMetadataPointerInstruction,
   TYPE_SIZE,
   LENGTH_SIZE,
   ExtensionType,
   getMintLen,
 } from "@solana/spl-token";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { Rocket } from "lucide-react";
 import { useRef, useState } from "react";
 import NotificationModal from "./NotificationModal";
@@ -42,7 +41,6 @@ const TokenLaunchpad = () => {
   const tokenSymbolRef = useRef<HTMLInputElement>(null);
   const tokenImageUrlRef = useRef<HTMLInputElement>(null);
   const tokenDecimalsRef = useRef<HTMLInputElement>(null);
-  const initialSupplyRef = useRef<HTMLInputElement>(null);
   const mintAuthorityRef = useRef<HTMLInputElement>(null);
   const freezeAuthorityRef = useRef<HTMLInputElement>(null);
   const freezeAuthorityEnabledRef = useRef<HTMLInputElement>(null);

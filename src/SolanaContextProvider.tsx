@@ -1,4 +1,4 @@
-import React, { Children, useMemo, type ReactElement } from "react";
+import { useMemo, type ReactElement } from "react";
 import {
   ConnectionProvider,
   WalletProvider,
