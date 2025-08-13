@@ -1,5 +1,13 @@
 import { useContext } from "react";
-import { Send, Rocket, Wallet, ArrowLeftRight, Bitcoin } from "lucide-react";
+import {
+  Send,
+  Rocket,
+  Wallet,
+  ArrowLeftRight,
+  Bitcoin,
+  SendIcon,
+  Coins,
+} from "lucide-react";
 import { SidebarItem } from "./SideBarItem";
 import SolanaLogo from "../Icons/SolanaLogo";
 import { ActiveTabContext } from "../App";
@@ -10,7 +18,9 @@ export const Sidebar = () => {
     { id: "airdrop", icon: <Send size={20} />, text: "Airdrop" },
     { id: "token", icon: <Rocket size={20} />, text: "Launch token" },
     { id: "manage", icon: <Bitcoin size={20} />, text: "Manage Tokens" },
-    { id: "transfer", icon: <ArrowLeftRight size={20} />, text: "Transfers" },
+    { id: "transfer", icon: <SendIcon size={20} />, text: "Transfers" },
+    { id: "swap", icon: <ArrowLeftRight size={20} />, text: "Swap" },
+    { id: "stake", icon: <Coins size={20} />, text: "Stake" },
   ];
 
   return (

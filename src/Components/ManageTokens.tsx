@@ -1,6 +1,19 @@
-import { useState } from "react";
-import { Coins, Send, Flame, Eye, Plus, Wallet } from "lucide-react";
-
+import { useEffect, useState } from "react";
+import { Coins, Send, Flame, Layers, Plus, Wallet } from "lucide-react";
+import { TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+interface Token {
+  ata: string;
+  mint: string;
+  owner: string;
+  decimals: number;
+  amount: number;
+}
+interface Notification {
+  id: number;
+  message: string;
+  type: "success" | "error";
+}
 const TokenManager = () => {
   const [activeTab, setActiveTab] = useState("mint");
   const [mintAddress, setMintAddress] = useState("");
@@ -8,23 +21,59 @@ const TokenManager = () => {
   const [transferAddress, setTransferAddress] = useState("");
   const [transferAmount, setTransferAmount] = useState("");
   const [burnAmount, setBurnAmount] = useState("");
-  const [tokens, setTokens] = useState([
-    {
-      mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-      symbol: "USDC",
-      balance: 1000.5,
-      decimals: 6,
-    },
-    {
-      mint: "So11111111111111111111111111111111111111112",
-      symbol: "SOL",
-      balance: 5.25,
-      decimals: 9,
-    },
-  ]);
-  const [notifications, setNotifications] = useState([]);
+  const [tokenProgramTokens, setTokenProgramTokens] = useState<Token[]>([]);
+  const [token_2022_Tokens, setToken_2022_Tokens] = useState<Token[]>([]);
+  const { connection } = useConnection();
+  const wallet = useWallet();
+  async function getTokensByOnwner() {
+    if (!wallet.publicKey) {
+      return;
+    }
+    let response1 = await connection.getParsedTokenAccountsByOwner(
+      wallet.publicKey,
+      {
+        programId: TOKEN_PROGRAM_ID,
+      }
+    );
+    const tokens1 = response1.value.map((token) => {
+      return {
+        ata: token.pubkey.toBase58(),
+        mint: token.account.data["parsed"]["info"]["mint"],
+        owner: token.account.data["parsed"]["info"]["owner"],
+        decimals:
+          token.account.data["parsed"]["info"]["tokenAmount"]["decimals"],
+        amount: token.account.data["parsed"]["info"]["tokenAmount"]["amount"],
+      };
+    });
+    setTokenProgramTokens(tokens1);
+    let response2 = await connection.getParsedTokenAccountsByOwner(
+      wallet.publicKey,
+      {
+        programId: TOKEN_2022_PROGRAM_ID,
+      }
+    );
+    const tokens2 = response2.value.map((token) => {
+      return {
+        ata: token.pubkey.toBase58(),
+        mint: token.account.data["parsed"]["info"]["mint"],
+        owner: token.account.data["parsed"]["info"]["owner"],
+        decimals:
+          token.account.data["parsed"]["info"]["tokenAmount"]["decimals"],
+        amount: token.account.data["parsed"]["info"]["tokenAmount"]["amount"],
+      };
+    });
+    setToken_2022_Tokens(tokens2);
+  }
+  useEffect(() => {
+    getTokensByOnwner();
+  }, [wallet]);
 
-  const addNotification = (message, type = "success") => {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  const addNotification = (
+    message: string,
+    type: "success" | "error" = "success"
+  ) => {
     const id = Date.now();
     setNotifications((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
@@ -32,96 +81,17 @@ const TokenManager = () => {
     }, 3000);
   };
 
-  const handleMint = () => {
-    if (!mintAddress || !mintAmount) {
-      addNotification("Please enter both mint address and amount", "error");
-      return;
-    }
+  const handleMint = () => {};
 
-    // Simulate minting
-    const newToken = {
-      mint: mintAddress,
-      symbol: "TOKEN",
-      balance: parseFloat(mintAmount),
-      decimals: 6,
-    };
+  const handleTransfer = () => {};
 
-    const existingToken = tokens.find((t) => t.mint === mintAddress);
-    if (existingToken) {
-      setTokens((prev) =>
-        prev.map((t) =>
-          t.mint === mintAddress
-            ? { ...t, balance: t.balance + parseFloat(mintAmount) }
-            : t
-        )
-      );
-    } else {
-      setTokens((prev) => [...prev, newToken]);
-    }
-
-    addNotification(`Successfully minted ${mintAmount} tokens!`);
-    setMintAmount("");
-  };
-
-  const handleTransfer = () => {
-    if (!transferAddress || !transferAmount || !mintAddress) {
-      addNotification("Please fill in all transfer fields", "error");
-      return;
-    }
-
-    const token = tokens.find((t) => t.mint === mintAddress);
-    if (!token || token.balance < parseFloat(transferAmount)) {
-      addNotification("Insufficient balance for transfer", "error");
-      return;
-    }
-
-    setTokens((prev) =>
-      prev.map((t) =>
-        t.mint === mintAddress
-          ? { ...t, balance: t.balance - parseFloat(transferAmount) }
-          : t
-      )
-    );
-
-    addNotification(
-      `Successfully transferred ${transferAmount} tokens to ${transferAddress.slice(
-        0,
-        6
-      )}...${transferAddress.slice(-4)}`
-    );
-    setTransferAmount("");
-    setTransferAddress("");
-  };
-
-  const handleBurn = () => {
-    if (!burnAmount || !mintAddress) {
-      addNotification("Please enter burn amount and select token", "error");
-      return;
-    }
-
-    const token = tokens.find((t) => t.mint === mintAddress);
-    if (!token || token.balance < parseFloat(burnAmount)) {
-      addNotification("Insufficient balance for burning", "error");
-      return;
-    }
-
-    setTokens((prev) =>
-      prev.map((t) =>
-        t.mint === mintAddress
-          ? { ...t, balance: t.balance - parseFloat(burnAmount) }
-          : t
-      )
-    );
-
-    addNotification(`Successfully burned ${burnAmount} tokens!`);
-    setBurnAmount("");
-  };
+  const handleBurn = () => {};
 
   const tabs = [
     { id: "mint", label: "Mint", icon: Plus },
     { id: "transfer", label: "Transfer", icon: Send },
     { id: "burn", label: "Burn", icon: Flame },
-    { id: "view", label: "My Tokens", icon: Eye },
+    { id: "view", label: "My Tokens", icon: Layers },
   ];
 
   return (
@@ -225,7 +195,7 @@ const TokenManager = () => {
           {activeTab === "transfer" && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold flex items-center gap-2">
-                <Send className="w-6 h-6 text-blue-400" />
+                <Send className="w-6 h-6 text-blue-600" />
                 Transfer Tokens
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -239,9 +209,14 @@ const TokenManager = () => {
                     className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-400 focus:border-black-500 focus:ring-2 focus:ring-black/20 transition-all"
                   >
                     <option value="">Select token</option>
-                    {tokens.map((token) => (
+                    {tokenProgramTokens.map((token) => (
                       <option key={token.mint} value={token.mint}>
-                        {token.symbol} - {token.balance}
+                        {token.mint} - {token.amount}
+                      </option>
+                    ))}
+                    {token_2022_Tokens.map((token) => (
+                      <option key={token.mint} value={token.mint}>
+                        {token.mint} - {token.amount}
                       </option>
                     ))}
                   </select>
@@ -284,7 +259,7 @@ const TokenManager = () => {
           {activeTab === "burn" && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold flex items-center gap-2">
-                <Flame className="w-6 h-6 text-red-400" />
+                <Flame className="w-6 h-6 text-red-600" />
                 Burn Tokens
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -295,12 +270,17 @@ const TokenManager = () => {
                   <select
                     value={mintAddress}
                     onChange={(e) => setMintAddress(e.target.value)}
-                    className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-400 focus:border-black focus:ring-2 focus:ring-black/20 transition-all"
                   >
                     <option value="">Select token</option>
-                    {tokens.map((token) => (
+                    {tokenProgramTokens.map((token) => (
                       <option key={token.mint} value={token.mint}>
-                        {token.symbol} - {token.balance}
+                        {token.mint} - {token.amount}
+                      </option>
+                    ))}
+                    {token_2022_Tokens.map((token) => (
+                      <option key={token.mint} value={token.mint}>
+                        {token.mint} - {token.amount}
                       </option>
                     ))}
                   </select>
@@ -314,7 +294,7 @@ const TokenManager = () => {
                     value={burnAmount}
                     onChange={(e) => setBurnAmount(e.target.value)}
                     placeholder="Enter amount"
-                    className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:border-black focus:ring-2 focus:ring-black/20 transition-all"
                   />
                 </div>
               </div>
@@ -331,14 +311,14 @@ const TokenManager = () => {
           {activeTab === "view" && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold flex items-center gap-2">
-                <Eye className="w-6 h-6 text-purple-400" />
+                <Layers className="w-6 h-6 text-indigo-800" />
                 My Tokens
               </h2>
               <div className="grid gap-4">
-                {tokens.map((token) => (
+                {tokenProgramTokens.map((token) => (
                   <div
                     key={token.mint}
-                    className="bg-gray-800 border border-gray-600 rounded-lg p-6 hover:bg-gray-750 transition-all duration-200"
+                    className="bg-gray-200 border border-gray-300 rounded-lg p-6 hover:bg-gray-750 transition-all duration-200"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -346,34 +326,63 @@ const TokenManager = () => {
                           <Coins className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                          <h3 className="text-xl font-semibold text-white">
-                            {token.symbol}
+                          <h3 className="text-xl font-semibold text-black">
+                            Token
                           </h3>
-                          <p className="text-gray-400 text-sm font-mono">
-                            {token.mint.slice(0, 8)}...{token.mint.slice(-8)}
+                          <p className="text-gray-800 text-sm font-mono">
+                            {token.mint}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-2xl font-bold text-white">
-                          {token.balance.toFixed(
-                            token.decimals > 2 ? 2 : token.decimals
-                          )}
+                        <p className="text-2xl font-bold text-black">
+                          {token.amount}
                         </p>
-                        <p className="text-gray-400 text-sm">
+                        <p className="text-gray-800 text-sm">
                           {token.decimals} decimals
                         </p>
                       </div>
                     </div>
                   </div>
                 ))}
-                {tokens.length === 0 && (
-                  <div className="text-center py-12 text-gray-400">
-                    <Wallet className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg">No tokens found</p>
-                    <p>Start by minting some tokens!</p>
+                {token_2022_Tokens.map((token) => (
+                  <div
+                    key={token.mint}
+                    className="bg-gray-200 border border-gray-300 rounded-lg p-6 hover:bg-gray-750 transition-all duration-200"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                          <Coins className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-semibold text-black">
+                            Token
+                          </h3>
+                          <p className="text-gray-800 text-sm font-mono">
+                            {token.mint}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-black">
+                          {token.amount}
+                        </p>
+                        <p className="text-gray-800 text-sm">
+                          {token.decimals} decimals
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                )}
+                ))}
+                {tokenProgramTokens.length === 0 &&
+                  token_2022_Tokens.length === 0 && (
+                    <div className="text-center py-12 text-gray-400">
+                      <Wallet className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                      <p className="text-lg">No tokens found</p>
+                      <p>Start by minting some tokens!</p>
+                    </div>
+                  )}
               </div>
             </div>
           )}

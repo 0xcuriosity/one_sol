@@ -8,6 +8,7 @@ import { ActiveTabContext } from "../App";
 import { useContext, useRef, useEffect } from "react";
 import SendSOLComponent from "./SendSOL";
 import SwapComponent from "./Swap";
+import LiquidStakingComponent from "./LST";
 export default function MainContent() {
   const { activeTab } = useContext(ActiveTabContext);
   const walletRef = useRef<HTMLDivElement>(null);
@@ -15,6 +16,8 @@ export default function MainContent() {
   const tokenRef = useRef<HTMLDivElement>(null);
   const tokenManagerRef = useRef<HTMLDivElement>(null);
   const transferRef = useRef<HTMLDivElement>(null);
+  const swapRef = useRef<HTMLDivElement>(null);
+  const stakeRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const sectionMap: Record<string, React.RefObject<HTMLDivElement | null>> = {
       generate: walletRef,
@@ -22,6 +25,8 @@ export default function MainContent() {
       token: tokenRef,
       manage: tokenManagerRef,
       transfer: transferRef,
+      swap: swapRef,
+      stake: stakeRef,
     };
 
     const targetRef = sectionMap[activeTab];
@@ -57,8 +62,11 @@ export default function MainContent() {
         <div ref={transferRef}>
           <SendSOLComponent />
         </div>
-        <div ref={transferRef}>
+        <div ref={swapRef}>
           <SwapComponent />
+        </div>
+        <div ref={stakeRef}>
+          <LiquidStakingComponent />
         </div>
       </div>
     </div>
