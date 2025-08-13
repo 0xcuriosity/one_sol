@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { Wallet } from "lucide-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const wallet = useWallet();
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -26,7 +28,11 @@ export default function Navbar() {
             {/* Select Wallet Button on the right */}
 
             <WalletMultiButton>
-              <Wallet className="mr-2 mb-0.5 h-4 w-4" /> Connect Wallet
+              {!wallet.publicKey && (
+                <>
+                  <Wallet className="mr-2 mb-0.5 h-4 w-4" /> Connect Wallet
+                </>
+              )}
             </WalletMultiButton>
           </div>
         </div>

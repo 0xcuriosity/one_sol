@@ -145,7 +145,7 @@ const TokenLaunchpad = () => {
         isVisible={notificationVisible}
         setIsVisible={setNotificationVisible}
       />
-      <div className="min-h-screen bg-black p-4">
+      <div className="bg-black p-4">
         <div className="max-w-4xl mx-auto">
           <div className="bg-gray-100 border border-gray-200 rounded-xl shadow-2xl">
             {/* Header */}

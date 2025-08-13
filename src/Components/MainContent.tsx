@@ -3,18 +3,25 @@ import Navbar from "./NavigationBar";
 import { Sidebar } from "./Sidebar";
 import TokenLaunchpad from "./TokenLaunchpad";
 import GenerateWallet from "./WalletGenerator";
+import TokenManager from "./ManageTokens";
 import { ActiveTabContext } from "../App";
 import { useContext, useRef, useEffect } from "react";
+import SendSOLComponent from "./SendSOL";
+import SwapComponent from "./Swap";
 export default function MainContent() {
   const { activeTab } = useContext(ActiveTabContext);
   const walletRef = useRef<HTMLDivElement>(null);
   const airdropRef = useRef<HTMLDivElement>(null);
   const tokenRef = useRef<HTMLDivElement>(null);
+  const tokenManagerRef = useRef<HTMLDivElement>(null);
+  const transferRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const sectionMap: Record<string, React.RefObject<HTMLDivElement | null>> = {
       generate: walletRef,
       airdrop: airdropRef,
       token: tokenRef,
+      manage: tokenManagerRef,
+      transfer: transferRef,
     };
 
     const targetRef = sectionMap[activeTab];
@@ -38,13 +45,20 @@ export default function MainContent() {
         <div ref={walletRef}>
           <GenerateWallet />
         </div>
-
         <div ref={airdropRef}>
           <AirdropComponent />
         </div>
-
         <div ref={tokenRef}>
           <TokenLaunchpad />
+        </div>
+        <div ref={tokenManagerRef}>
+          <TokenManager />
+        </div>
+        <div ref={transferRef}>
+          <SendSOLComponent />
+        </div>
+        <div ref={transferRef}>
+          <SwapComponent />
         </div>
       </div>
     </div>
