@@ -142,7 +142,7 @@ const SwapComponent = () => {
   };
 
   return (
-    <div className="bg-black flex items-center justify-center p-4 mb-96">
+    <div className="bg-black flex items-center justify-center p-4">
       {/* Notification */}
       {notification && (
         <div className="fixed top-4 right-4 z-50">

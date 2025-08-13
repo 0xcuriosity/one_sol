@@ -19,7 +19,7 @@ const LiquidStakingComponent = () => {
   };
 
   return (
-    <div className="bg-black flex items-center justify-center p-4 min-h-screen">
+    <div className="bg-black flex items-center justify-center p-4 mb-96">
       <div className="bg-gray-100 border border-gray-800 rounded-xl p-8 shadow-2xl max-w-4xl w-full">
         <div className="text-center mb-8">
           <h2 className="text-black text-2xl font-bold mb-2">Liquid Staking</h2>
