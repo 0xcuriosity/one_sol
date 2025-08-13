@@ -1,7 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Coins, Send, Flame, Layers, Plus, Wallet } from "lucide-react";
-import { TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+import {
+  TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
+  getAssociatedTokenAddressSync,
+  createAssociatedTokenAccountInstruction,
+  createMintToInstruction,
+} from "@solana/spl-token";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { LAMPORTS_PER_SOL, PublicKey, Transaction } from "@solana/web3.js";
 interface Token {
   ata: string;
   mint: string;
@@ -16,8 +23,9 @@ interface Notification {
 }
 const TokenManager = () => {
   const [activeTab, setActiveTab] = useState("mint");
-  const [mintAddress, setMintAddress] = useState("");
-  const [mintAmount, setMintAmount] = useState("");
+  const mintAddressRef = useRef<HTMLInputElement>(null);
+  const selectMintRef = useRef<HTMLSelectElement>(null);
+  const mintAmountRef = useRef<HTMLInputElement>(null);
   const [transferAddress, setTransferAddress] = useState("");
   const [transferAmount, setTransferAmount] = useState("");
   const [burnAmount, setBurnAmount] = useState("");
@@ -78,12 +86,62 @@ const TokenManager = () => {
     setNotifications((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
       setNotifications((prev) => prev.filter((n) => n.id !== id));
-    }, 3000);
+    }, 10000);
   };
 
-  const handleMint = () => {};
+  const handleMint = async () => {
+    if (
+      !mintAddressRef.current?.value ||
+      !wallet.publicKey ||
+      !mintAmountRef.current?.value
+    ) {
+      return;
+    }
+    const mintPublickey = new PublicKey(mintAddressRef.current?.value);
+    const associatedTokenAddress = getAssociatedTokenAddressSync(
+      mintPublickey,
+      wallet.publicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID
+    );
+    console.log(associatedTokenAddress);
+    const createAtaInstruction = createAssociatedTokenAccountInstruction(
+      wallet.publicKey, // payer
+      associatedTokenAddress, // ata
+      wallet.publicKey, // owner
+      mintPublickey, // mint
+      TOKEN_2022_PROGRAM_ID
+    );
+    console.log(createAtaInstruction);
+    const createMintInstruction = createMintToInstruction(
+      mintPublickey,
+      associatedTokenAddress,
+      wallet.publicKey,
+      Number(mintAmountRef.current.value) * LAMPORTS_PER_SOL, // 1 billion tokens (with 9 decimals = 1 token)
+      [],
+      TOKEN_2022_PROGRAM_ID
+    );
+    const transaction = new Transaction().add(
+      createAtaInstruction,
+      createMintInstruction
+    );
+    transaction.feePayer = wallet.publicKey;
+    transaction.recentBlockhash = (
+      await connection.getLatestBlockhash()
+    ).blockhash;
+    try {
+      const txSignature = await wallet.sendTransaction(transaction, connection);
+      await connection.confirmTransaction(txSignature, "confirmed");
+      addNotification(
+        `Transaction successfull , transaction Id : ${txSignature}`
+      );
+    } catch (error) {
+      console.log(error);
+      addNotification(`Transaction failed`, "error");
+    }
+  };
 
-  const handleTransfer = () => {};
+  const handleTransfer = async () => {};
 
   const handleBurn = () => {};
 
@@ -163,10 +221,9 @@ const TokenManager = () => {
                   </label>
                   <input
                     type="text"
-                    value={mintAddress}
-                    onChange={(e) => setMintAddress(e.target.value)}
+                    ref={mintAddressRef}
                     placeholder="Enter token mint address"
-                    className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-black placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   />
                 </div>
                 <div>
@@ -175,10 +232,9 @@ const TokenManager = () => {
                   </label>
                   <input
                     type="number"
-                    value={mintAmount}
-                    onChange={(e) => setMintAmount(e.target.value)}
+                    ref={mintAmountRef}
                     placeholder="Enter amount"
-                    className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-black placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   />
                 </div>
               </div>
@@ -204,8 +260,7 @@ const TokenManager = () => {
                     Token Mint Address
                   </label>
                   <select
-                    value={mintAddress}
-                    onChange={(e) => setMintAddress(e.target.value)}
+                    ref={selectMintRef}
                     className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-400 focus:border-black-500 focus:ring-2 focus:ring-black/20 transition-all"
                   >
                     <option value="">Select token</option>
@@ -268,8 +323,7 @@ const TokenManager = () => {
                     Token to Burn
                   </label>
                   <select
-                    value={mintAddress}
-                    onChange={(e) => setMintAddress(e.target.value)}
+                    ref={selectMintRef}
                     className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-400 focus:border-black focus:ring-2 focus:ring-black/20 transition-all"
                   >
                     <option value="">Select token</option>

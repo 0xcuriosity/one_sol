@@ -90,6 +90,7 @@ const TokenLaunchpad = () => {
         mint.publicKey,
         TOKEN_2022_PROGRAM_ID
       );
+    // initialize a token
     const initializeMintInstruction = createInitializeMintInstruction(
       mint.publicKey,
       decimals,
@@ -97,6 +98,7 @@ const TokenLaunchpad = () => {
       freezeAuthority,
       TOKEN_2022_PROGRAM_ID
     );
+    // attach metadata
     const initializeInstruction = createInitializeInstruction({
       programId: TOKEN_2022_PROGRAM_ID,
       mint: mint.publicKey,
@@ -210,7 +212,7 @@ const TokenLaunchpad = () => {
                     </label>
                     <input
                       type="number"
-                      placeholder="1"
+                      placeholder="9"
                       min="0"
                       max="18"
                       className={basicInfoInputBoxStyles}
