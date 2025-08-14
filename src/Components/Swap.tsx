@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useWallet, useConnection } from "@solana/wallet-adapter-react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { ArrowUpDown, RefreshCw } from "lucide-react";
 
 const SwapComponent = () => {
@@ -15,7 +15,6 @@ const SwapComponent = () => {
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
 
   const wallet = useWallet();
-  const { connection } = useConnection();
 
   // Mock token list - you can expand this
   const tokens = [

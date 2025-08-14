@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from "react";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { Wallet } from "lucide-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { NetworkContext } from "../SolanaContextProvider";
@@ -11,7 +11,6 @@ export default function Navbar() {
   }, [network]);
   const [isScrolled, setIsScrolled] = useState(false);
   const wallet = useWallet();
-  const { connection } = useConnection();
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
