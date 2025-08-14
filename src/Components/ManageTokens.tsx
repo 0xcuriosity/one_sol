@@ -6,9 +6,12 @@ import {
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountInstruction,
   createMintToInstruction,
+  createTransferCheckedInstruction,
+  createBurnCheckedInstruction,
 } from "@solana/spl-token";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { LAMPORTS_PER_SOL, PublicKey, Transaction } from "@solana/web3.js";
+import { isValidSolanaAddress } from "./SendSOL";
 interface Token {
   ata: string;
   mint: string;
@@ -26,9 +29,9 @@ const TokenManager = () => {
   const mintAddressRef = useRef<HTMLInputElement>(null);
   const selectMintRef = useRef<HTMLSelectElement>(null);
   const mintAmountRef = useRef<HTMLInputElement>(null);
-  const [transferAddress, setTransferAddress] = useState("");
-  const [transferAmount, setTransferAmount] = useState("");
-  const [burnAmount, setBurnAmount] = useState("");
+  const transferAddressRef = useRef<HTMLInputElement>(null);
+  const transferAmountRef = useRef<HTMLInputElement>(null);
+  const burnAmount = useRef<HTMLInputElement>(null);
   const [tokenProgramTokens, setTokenProgramTokens] = useState<Token[]>([]);
   const [token_2022_Tokens, setToken_2022_Tokens] = useState<Token[]>([]);
   const { connection } = useConnection();
@@ -141,9 +144,152 @@ const TokenManager = () => {
     }
   };
 
-  const handleTransfer = async () => {};
+  const handleTransfer = async () => {
+    const address = transferAddressRef.current?.value?.trim();
+    const amount = Number(transferAmountRef.current?.value);
+    const token = selectMintRef.current?.value;
+    console.log(`transferring token : ${token}`);
+    const tokenMintAddress = token_2022_Tokens.find((x) => x.mint === token);
+    const decimals = tokenMintAddress?.decimals;
+    console.log(decimals);
+    if (!token || !decimals) {
+      return;
+    }
 
-  const handleBurn = () => {};
+    const mintPublickey = new PublicKey(token);
+    // Validation
+    if (!wallet.publicKey) {
+      addNotification("Please connect your wallet first", "error");
+      return;
+    }
+
+    if (!address) {
+      addNotification("Please enter a recipient address", "error");
+      return;
+    }
+
+    if (!isValidSolanaAddress(address)) {
+      addNotification("Please enter a valid Solana address", "error");
+      return;
+    }
+
+    if (!amount || amount <= 0) {
+      addNotification("Please enter a valid amount greater than 0", "error");
+      return;
+    }
+
+    // TODO - logic to actually create ATA for recipient Solana address and send the token
+
+    const fromWalletPublicKey = wallet.publicKey;
+    const toWallet = new PublicKey(address);
+    const fromTokenAccountAddress = await getAssociatedTokenAddressSync(
+      mintPublickey,
+      fromWalletPublicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    const toTokenAccountAddress = await getAssociatedTokenAddressSync(
+      mintPublickey,
+      toWallet,
+      false,
+      TOKEN_2022_PROGRAM_ID
+    );
+    // const createFromAtaIx = createAssociatedTokenAccountInstruction(
+    //   fromWalletPublicKey, // payer
+    //   fromTokenAccountAddress, // ata
+    //   fromWalletPublicKey, // owner
+    //   mintPublickey,
+    //   TOKEN_2022_PROGRAM_ID
+    // );
+
+    const createToAtaIx = createAssociatedTokenAccountInstruction(
+      fromWalletPublicKey, // payer
+      toTokenAccountAddress, // ata
+      toWallet, // owner
+      mintPublickey,
+      TOKEN_2022_PROGRAM_ID
+    );
+    const transferAmount = amount * 10 ** decimals;
+    const transferIx = createTransferCheckedInstruction(
+      fromTokenAccountAddress, // from
+      mintPublickey, // mint
+      toTokenAccountAddress, // to
+      fromWalletPublicKey, // from's owner
+      transferAmount,
+      decimals,
+      [],
+      TOKEN_2022_PROGRAM_ID
+    );
+    try {
+      const createToAtaTransaction = new Transaction().add(createToAtaIx);
+      const tx1Signature = await wallet.sendTransaction(
+        createToAtaTransaction,
+        connection
+      );
+      await connection.confirmTransaction(tx1Signature);
+      const setupTransaction = new Transaction().add(transferIx);
+      const txSignature = await wallet.sendTransaction(
+        setupTransaction,
+        connection
+      );
+      await connection.confirmTransaction(txSignature);
+      addNotification(
+        `Successfully sent ${amount} Tokens (mint address ${mintPublickey} to wallet address ${address})`,
+        "success"
+      );
+      if (transferAddressRef.current) transferAddressRef.current.value = "";
+      if (transferAmountRef.current) transferAmountRef.current.value = "";
+      if (selectMintRef.current) selectMintRef.current.value = "";
+    } catch (error) {
+      addNotification(`Transaction failed`, "error");
+      console.log(error);
+    }
+  };
+
+  const handleBurn = async () => {
+    if (
+      !selectMintRef.current?.value ||
+      !burnAmount.current?.value ||
+      !wallet.publicKey
+    )
+      return;
+    const amount = burnAmount.current?.value;
+    const token = selectMintRef.current?.value;
+    const mintPublickey = new PublicKey(token);
+    const tokenMintAddress = token_2022_Tokens.find((x) => x.mint === token);
+    const decimals = tokenMintAddress?.decimals;
+    console.log(decimals);
+    if (!decimals) return;
+    const associatedTokenAddress = getAssociatedTokenAddressSync(
+      mintPublickey,
+      wallet.publicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID
+    );
+    try {
+      const burnTx = createBurnCheckedInstruction(
+        associatedTokenAddress,
+        mintPublickey,
+        wallet.publicKey,
+        Number(amount),
+        decimals,
+        [],
+        TOKEN_2022_PROGRAM_ID
+      );
+      const transaction = new Transaction().add(burnTx);
+      const txSignature = await wallet.sendTransaction(transaction, connection);
+      await connection.confirmTransaction(txSignature);
+      console.log(txSignature);
+      addNotification(
+        `Amount ${amount} of Token : ${token} burnt successfully , transaction Signature : ${txSignature}`,
+        "success"
+      );
+    } catch (error) {
+      console.log(error);
+      addNotification(`Burn Transaction failed`, "error");
+    }
+  };
 
   const tabs = [
     { id: "mint", label: "Mint", icon: Plus },
@@ -282,8 +428,7 @@ const TokenManager = () => {
                   </label>
                   <input
                     type="text"
-                    value={transferAddress}
-                    onChange={(e) => setTransferAddress(e.target.value)}
+                    ref={transferAddressRef}
                     placeholder="Enter wallet address"
                     className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-black placeholder-gray-400 focus:border-black focus:ring-2 focus:ring-black/20 transition-all"
                   />
@@ -294,10 +439,9 @@ const TokenManager = () => {
                   </label>
                   <input
                     type="number"
-                    value={transferAmount}
-                    onChange={(e) => setTransferAmount(e.target.value)}
+                    ref={transferAmountRef}
                     placeholder="Enter amount"
-                    className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:border-black focus:ring-2 focus:ring-black/20 transition-all"
+                    className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-black placeholder-gray-400 focus:border-black focus:ring-2 focus:ring-black/20 transition-all"
                   />
                 </div>
               </div>
@@ -345,10 +489,9 @@ const TokenManager = () => {
                   </label>
                   <input
                     type="number"
-                    value={burnAmount}
-                    onChange={(e) => setBurnAmount(e.target.value)}
                     placeholder="Enter amount"
-                    className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:border-black focus:ring-2 focus:ring-black/20 transition-all"
+                    ref={burnAmount}
+                    className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-black placeholder-gray-400 focus:border-black focus:ring-2 focus:ring-black/20 transition-all"
                   />
                 </div>
               </div>

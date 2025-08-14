@@ -7,7 +7,14 @@ import {
   SystemProgram,
   PublicKey,
 } from "@solana/web3.js";
-
+export const isValidSolanaAddress = (address: string): boolean => {
+  try {
+    new PublicKey(address);
+    return true;
+  } catch {
+    return false;
+  }
+};
 const SendSOLComponent = () => {
   const addressRef = useRef<HTMLInputElement>(null);
   const amountRef = useRef<HTMLInputElement>(null);
@@ -30,15 +37,6 @@ const SendSOLComponent = () => {
   const populateTipAddress = () => {
     if (addressRef.current) {
       addressRef.current.value = TIP_ADDRESS;
-    }
-  };
-
-  const isValidSolanaAddress = (address: string): boolean => {
-    try {
-      new PublicKey(address);
-      return true;
-    } catch {
-      return false;
     }
   };
 

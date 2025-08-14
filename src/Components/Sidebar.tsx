@@ -29,7 +29,7 @@ export const Sidebar = () => {
         {/* Header */}
         <div className="flex items-center gap-2 px-6 py-8">
           <SolanaLogo />
-          <div className=" text-3xl font-bold bg-gradient-to-r from-gray-600 to-white bg-clip-text text-transparent">
+          <div className=" text-3xl font-bold bg-gradient-to-r from-cyan-200 to-violet-400 bg-clip-text text-transparent">
             OneSol
           </div>
         </div>

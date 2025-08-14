@@ -19,7 +19,7 @@ type Wallet = {
   privateKey: string;
   showPrivateKey: boolean;
 };
-
+// TODO - add the passphrase feature - generate the public-private keypair taking the passphrase as the input
 const GenerateWallet = () => {
   const [mneumonic, setMneumonic] = useState("");
   const passPhraseRef = useRef<HTMLInputElement>(null);
