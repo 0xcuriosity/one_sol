@@ -29,11 +29,13 @@ export default function Navbar() {
       >
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-end gap-4">
-            <button
-              onClick={() => {
-                setNetwork(WalletAdapterNetwork.Mainnet);
-              }}
-              className={`
+            {wallet.publicKey && (
+              <>
+                <button
+                  onClick={() => {
+                    setNetwork(WalletAdapterNetwork.Mainnet);
+                  }}
+                  className={`
           px-4 py-2 rounded-md font-medium transition-all duration-200 flex items-center space-x-2
           ${
             network === WalletAdapterNetwork.Mainnet
@@ -41,18 +43,18 @@ export default function Navbar() {
               : "bg-gray-800 text-gray-300 px-6 hover:bg-gray-600 "
           }
         `}
-            >
-              {network === WalletAdapterNetwork.Mainnet && (
-                <div className="w-2 h-2 bg-green-700 rounded-full"></div>
-              )}
-              <span>Mainnet</span>
-            </button>
+                >
+                  {network === WalletAdapterNetwork.Mainnet && (
+                    <div className="w-2 h-2 bg-green-700 rounded-full"></div>
+                  )}
+                  <span>Mainnet</span>
+                </button>
 
-            <button
-              onClick={() => {
-                setNetwork(WalletAdapterNetwork.Devnet);
-              }}
-              className={`
+                <button
+                  onClick={() => {
+                    setNetwork(WalletAdapterNetwork.Devnet);
+                  }}
+                  className={`
           px-4 py-2 rounded-md font-medium transition-all duration-200 flex items-center space-x-2
           ${
             network === WalletAdapterNetwork.Devnet
@@ -60,12 +62,15 @@ export default function Navbar() {
               : "bg-gray-700 text-gray-300 px-6  hover:bg-gray-600"
           }
         `}
-            >
-              {network === WalletAdapterNetwork.Devnet && (
-                <div className="w-2 h-2 bg-green-700 rounded-full"></div>
-              )}
-              <span>Devnet</span>
-            </button>
+                >
+                  {network === WalletAdapterNetwork.Devnet && (
+                    <div className="w-2 h-2 bg-green-700 rounded-full"></div>
+                  )}
+                  <span>Devnet</span>
+                </button>
+              </>
+            )}
+
             <WalletMultiButton>
               {!wallet.publicKey && (
                 <>
